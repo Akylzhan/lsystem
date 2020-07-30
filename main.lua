@@ -1,21 +1,28 @@
 lsys = require 'l-system'
 
 function love.load()
+  height = 800
+  width = 1200
+  love.window.setMode(width, height)
+
   scale = 0.5
-  height = love.graphics.getHeight() / scale
-  width = love.graphics.getWidth() / scale
+  height = height / scale
+  width = width / scale
 
   t = {
-    axiom = 'F-F-F-F-F',
-    angle = 72,
+    variables = 'F',
+    axiom = 'F',
+    angle = 45,
     rules = {
-      { symbol = 'F', rule = 'F-F-F++F+F-F'},
+      {symbol = 'F', rule = '-F++F-'},
+      -- {symbol = 'Y', rule = '-FX-Y'},
     },
-    pos = {x=300,y=700},
-    line_length = 10
+    pos = {x=725,y=1000},
+    dir = {x=1,y=0},
+    line_length = 30
   }
 
-  system = lsys.newSystem(t, 4)
+  system = lsys.newSystem(t, 10)
 end
 
 function love.draw()

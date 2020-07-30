@@ -1,5 +1,5 @@
 -- TODO: branch support
--- TODO: multiple variable support
+-- TODO: support skipping symbol
 
 local l_system = {}
 
@@ -28,23 +28,37 @@ end
 
 -- unpacking axiom
 local function rewriteRules(str, rules, iteration_count)
-  if iteration_count < 1 then
+  if iteration_count < 0 then
     error("iteration_count is less than 1")
   end
 
   str = str:gsub(' ', '')
   for i,j in pairs(rules) do rules[i].rule = rules[i].rule:gsub(' ', '') end
 
+  -- TODO: optimize this chunk
   for i = 0, iteration_count - 1 do
-    for j, elem in ipairs(rules) do
-      str = string.gsub(str, elem.symbol, elem.rule)
+    result = {}
+    for c in str:gmatch"." do
+      replace_rule_position = nil
+      for k, elem in ipairs(rules) do
+        if c == elem.symbol then
+          replace_rule_position = k
+          break
+        end
+      end
+      if replace_rule_position then
+        table.insert(result, rules[replace_rule_position].rule)
+      else
+        table.insert(result, c)
+      end
     end
+    str = table.concat(result)
   end
   return str
 end
 
 
-local function parseCharacter(c, t)
+local function parseCharacter(t, c)
   to_draw = false
   if c == '+' then
     t.current_angle = t.current_angle + t.angle
@@ -56,10 +70,16 @@ local function parseCharacter(c, t)
     t.current_line_length = t.current_line_length + t.line_length
   elseif c == '!' then
     t.current_line_length = t.current_line_length - t.line_length
-  else
-    new_pos = rotate({x=0,y=t.current_line_length}, t.current_angle)
+  elseif t.variables:find(c) then
+    dir = {}
+    dir.x = t.dir.x * t.current_line_length
+    dir.y = t.dir.y * t.current_line_length
+    
+    new_pos = rotate(dir, t.current_angle)
+    
     t.pos.x = t.pos.x + new_pos.x
     t.pos.y = t.pos.y + new_pos.y
+    
     to_draw = true
   end
 
@@ -75,16 +95,18 @@ function l_system.newSystem(t, iteration_count)
   rule = rewriteRules(t.axiom, t.rules, iteration_count)
 
   system = {}
+  system.variables = t.variables
   system.line_length = t.line_length
   system.current_line_length = t.line_length
   system.angle = math.rad(t.angle)
   system.current_angle = 0
   system.last_pos = {x = t.pos.x, y = t.pos.y}
   system.pos = {x = t.pos.x, y = t.pos.y}
+  system.dir = t.dir
 
   positions = {}
   for c in rule:gmatch"." do
-    to_draw, system = parseCharacter(c, system)
+    to_draw, system = parseCharacter(system, c)
     if to_draw then
       table.insert(positions,
           { system.last_pos.x, system.last_pos.y,
@@ -92,7 +114,7 @@ function l_system.newSystem(t, iteration_count)
       system.last_pos = {x=system.pos.x, y=system.pos.y}
     end
   end
-  -- print(rule)
+  print(rule)
   -- for i,j in pairs(positions) do
   --   for k,l in ipairs(j) do
   --     print(l)
