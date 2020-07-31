@@ -1,43 +1,24 @@
 lsys = require 'l-system'
+config = require 'config'
 
 function love.load()
-  height = 800
-  width = 1200
+  height = config.height
+  width = config.width
+  scale = config.scale
+
   love.window.setMode(width, height)
 
-  scale = 0.5
   height = height / scale
   width = width / scale
 
-  t = {
-    variables = 'FG',
-    axiom = 'F-G-G',
-    angle = 120,
-    rules = {
-      {symbol = 'F', rule = 'F-G+F+G-F'},
-      {symbol = 'G', rule = 'GG'},
-    },
-    pos = {x=500 ,y=200},
-    dir = {x=0,y=1},
-    line_length = 30
-  }
-
-  system = lsys.newSystem(t, 6)
-  -- for i, positions in ipairs(system) do
-  --   print(unpackPositions(positions))
-  -- end
+  system = lsys.newSystem(config.system, config.iterations)
 end
 
 function love.draw()
   love.graphics.setColor(1,1,1)
-  love.graphics.scale(0.5, 0.5)
+  love.graphics.scale(scale, scale)
 
-  for i, positions in ipairs(system) do
-    x1 = positions[1]
-    y1 = height - positions[2]
-    x2 = positions[3]
-    y2 = height - positions[4]
-    love.graphics.line(x1, y1, x2, y2)
-    -- love.graphics.line(positions)
+  for i, v in ipairs(system.positions) do
+    love.graphics.line(v[1], height - v[2], v[3], height - v[4])
   end
 end
