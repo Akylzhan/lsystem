@@ -10,19 +10,22 @@ function love.load()
   width = width / scale
 
   t = {
-    variables = 'F',
-    axiom = 'F',
-    angle = 45,
+    variables = 'FG',
+    axiom = 'F-G-G',
+    angle = 120,
     rules = {
-      {symbol = 'F', rule = '-F++F-'},
-      -- {symbol = 'Y', rule = '-FX-Y'},
+      {symbol = 'F', rule = 'F-G+F+G-F'},
+      {symbol = 'G', rule = 'GG'},
     },
-    pos = {x=725,y=1000},
-    dir = {x=1,y=0},
+    pos = {x=500 ,y=200},
+    dir = {x=0,y=1},
     line_length = 30
   }
 
-  system = lsys.newSystem(t, 10)
+  system = lsys.newSystem(t, 6)
+  -- for i, positions in ipairs(system) do
+  --   print(unpackPositions(positions))
+  -- end
 end
 
 function love.draw()

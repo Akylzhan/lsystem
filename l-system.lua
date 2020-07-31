@@ -3,6 +3,21 @@
 
 local l_system = {}
 
+function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
 function unpackPositions(t)
   return t[1], t[2], t[3], t[4]
 end
@@ -21,7 +36,6 @@ local function rotate(t, radians)
   if math.abs(t.y) <= 1e-9 then
     t.y = 0
   end
-
   return t
 end
 
@@ -36,6 +50,7 @@ local function rewriteRules(str, rules, iteration_count)
   for i,j in pairs(rules) do rules[i].rule = rules[i].rule:gsub(' ', '') end
 
   -- TODO: optimize this chunk
+  -- maybe rewrite it recursively?
   for i = 0, iteration_count - 1 do
     result = {}
     for c in str:gmatch"." do
@@ -61,21 +76,31 @@ end
 local function parseCharacter(t, c)
   to_draw = false
   if c == '+' then
-    t.current_angle = t.current_angle + t.angle
+    t.stack[#t.stack].angle = t.stack[#t.stack].angle + t.angle
   elseif c == '-' then
-    t.current_angle = t.current_angle - t.angle
+    t.stack[#t.stack].angle = t.stack[#t.stack].angle - t.angle
   elseif c == '|' then
-    t.current_angle = t.current_angle + math.rad(180)
+    t.stack[#t.stack].angle = t.stack[#t.stack].angle + math.rad(180)
   elseif c == '#' then
-    t.current_line_length = t.current_line_length + t.line_length
+    t.stack[#t.stack].line_length = t.stack[#t.stack].line_length + t.line_length
   elseif c == '!' then
-    t.current_line_length = t.current_line_length - t.line_length
+    t.stack[#t.stack].line_length = t.stack[#t.stack].line_length - t.line_length
+  elseif c == '[' then
+    t.stack[#t.stack + 1] = {}
+    t.stack[#t.stack].angle = t.stack[#t.stack - 1].angle + math.rad(45)
+    t.stack[#t.stack].pos = deepcopy(t.stack[#t.stack - 1].pos)
+    t.stack[#t.stack].line_length = t.stack[#t.stack - 1].line_length * 0.65
+    t.stack[#t.stack - 1].line_length = t.stack[#t.stack - 1].line_length * 0.65
+  elseif c == ']' then
+    t.stack[#t.stack] = nil
+    t.pos = deepcopy(t.stack[#t.stack].pos)
+    t.stack[#t.stack].angle = t.stack[#t.stack].angle - math.rad(45)
   elseif t.variables:find(c) then
     dir = {}
-    dir.x = t.dir.x * t.current_line_length
-    dir.y = t.dir.y * t.current_line_length
+    dir.x = t.dir.x * t.stack[#t.stack].line_length
+    dir.y = t.dir.y * t.stack[#t.stack].line_length
     
-    new_pos = rotate(dir, t.current_angle)
+    new_pos = rotate(dir, t.stack[#t.stack].angle)
     
     t.pos.x = t.pos.x + new_pos.x
     t.pos.y = t.pos.y + new_pos.y
@@ -97,24 +122,24 @@ function l_system.newSystem(t, iteration_count)
   system = {}
   system.variables = t.variables
   system.line_length = t.line_length
-  system.current_line_length = t.line_length
   system.angle = math.rad(t.angle)
-  system.current_angle = 0
-  system.last_pos = {x = t.pos.x, y = t.pos.y}
-  system.pos = {x = t.pos.x, y = t.pos.y}
+  system.last_pos = deepcopy(t.pos)
+  system.pos = deepcopy(t.pos)
   system.dir = t.dir
+  system.stack = {{pos = system.last_pos, angle = 0, line_length = t.line_length}}
 
   positions = {}
   for c in rule:gmatch"." do
     to_draw, system = parseCharacter(system, c)
     if to_draw then
+      last_pos = system.stack[#system.stack].pos
       table.insert(positions,
-          { system.last_pos.x, system.last_pos.y,
+          { last_pos.x, last_pos.y,
             system.pos.x, system.pos.y })
-      system.last_pos = {x=system.pos.x, y=system.pos.y}
+      system.stack[#system.stack].pos = deepcopy(system.pos)
     end
   end
-  print(rule)
+  -- print(rule)
   -- for i,j in pairs(positions) do
   --   for k,l in ipairs(j) do
   --     print(l)
