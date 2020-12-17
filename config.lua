@@ -7,16 +7,16 @@ config.scale = 0.5
 config.system = {
   variables = 'F',
   skip_variables = '',
-  axiom = 'F',
-  angle = 22.5,
+  axiom = 'F+XF+F+XF',
+  angle = 90,
   rules = {
-    {symbol = 'F', rule = 'FF+[+F-F-F]-[-F+F+F]'},
+    {symbol = 'X', rule = 'XF-F+F-XF+F+XF-F+F-X'},
   },
-  pos = {x = 1200, y = 100},
+  pos = {x = 2000, y = 800},
   dir = {x = 0,y = 1},
-  line_length = 30
+  line_length = 10
 }
 
-config.iterations = 4
+config.iterations = 5
 
 return config

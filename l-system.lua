@@ -53,7 +53,7 @@ local function redraw(self)
       current_line_length = current_line_length * 0.8 -- line length factor
     elseif c == ']' then
       pos, last_pos, current_line_length, current_angle = unpack(stack[#stack])
-      stack[#stack] = nil -- TODO: Lua@5.4 change nil to undef
+      stack[#stack] = undef
     elseif variables:find(c) then
       d = dir:mult(Vector2:new(current_line_length, current_line_length))
       d = d:rotated(current_angle)
